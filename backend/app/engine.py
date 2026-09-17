@@ -1,4 +1,5 @@
 import hashlib
+import fcntl
 import os
 import re
 import threading
@@ -18,8 +19,16 @@ class Engine:
         # One writer avoids duplicate physical commits and limits NAS resource usage.
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='sync')
         self.scheduler = None
+        self.lock_file = None
 
     def start(self):
+        self.lock_file = (self.settings.root / 'database/worker.lock').open('a')
+        try:
+            fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            self.lock_file.close()
+            self.lock_file = None
+            raise RuntimeError('Another sync worker is using this volume') from None
         self.db.execute("UPDATE jobs SET status='failed', finished_at=?, current_file=NULL WHERE status IN ('started','running')", (now(),))
         self.scheduler = threading.Thread(target=self.schedule_loop, daemon=True)
         self.scheduler.start()
@@ -29,6 +38,9 @@ class Engine:
         if self.scheduler:
             self.scheduler.join(timeout=5)
         self.pool.shutdown(wait=True)
+        if self.lock_file:
+            self.lock_file.close()
+            self.lock_file = None
 
     def submit(self, account_id):
         with self.db.connect() as conn:
@@ -136,6 +148,14 @@ class Engine:
         if not re.fullmatch(r'\.[a-z0-9]{1,12}', suffix):
             suffix = ''
         relative = existing['local_path'] if existing else f'data/{sha[:2]}/{sha}{suffix}'
+        if not existing:
+            # A crash may publish a blob before SQLite commits. Reuse it even if
+            # the next origin has a different extension.
+            folder = self.settings.root / 'data' / sha[:2]
+            candidates = [p for p in folder.glob(sha + '*')
+                          if p.name == sha or p.name.startswith(sha + '.')]
+            if candidates:
+                relative = str(sorted(candidates)[0].relative_to(self.settings.root))
         destination = self.settings.root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         duplicate = destination.exists()

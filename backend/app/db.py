@@ -1,4 +1,6 @@
 import sqlite3
+import json
+import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -89,3 +91,10 @@ class Database:
     def event(self, job_id, level, message):
         self.execute('INSERT INTO events(job_id,created_at,level,message) VALUES(?,?,?,?)',
                      (job_id, now(), level, message))
+        log_path = self.path.parent.parent / 'logs/events.jsonl'
+        # Only allow application-authored messages here, never exception text.
+        if log_path.exists() and log_path.stat().st_size > 5 * 1024 * 1024:
+            os.replace(log_path, log_path.with_suffix('.jsonl.1'))
+        fd = os.open(log_path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+        with os.fdopen(fd, 'a') as output:
+            output.write(json.dumps({'at': now(), 'job_id': job_id, 'level': level, 'message': message}) + '\n')

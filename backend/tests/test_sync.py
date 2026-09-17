@@ -181,3 +181,28 @@ def test_cancellation_keeps_part(setup):
     assert result['status'] == 'cancelled'
     assert not physical(settings)
     assert list((settings.root / 'data/.parts').glob('*.part'))
+
+
+def test_orphan_after_crash_reused_with_different_extension(setup):
+    settings, db = setup
+    content = b'orphaned after atomic publication'
+    sha = hashlib.sha256(content).hexdigest()
+    orphan = settings.root / 'data' / sha[:2] / (sha + '.jpg')
+    orphan.parent.mkdir()
+    orphan.write_bytes(content)
+    (settings.source_root / 'renamed.png').write_bytes(content)
+    assert run(settings, db, account(db))['duplicates'] == 1
+    assert len(physical(settings)) == 1
+    assert db.one('SELECT local_path FROM blobs')['local_path'].endswith('.jpg')
+
+
+def test_second_worker_rejected(setup):
+    settings, db = setup
+    first, second = Engine(db, settings), Engine(db, settings)
+    first.start()
+    try:
+        with pytest.raises(RuntimeError, match='Another sync worker'):
+            second.start()
+    finally:
+        first.close()
+        second.close()
