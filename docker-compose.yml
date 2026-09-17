@@ -1,6 +1,6 @@
 services:
   cloud-sync:
-    image: ${PCS_IMAGE:-ghcr.io/OWNER/personal-cloud-sync:latest}
+    image: ${PCS_IMAGE:-ghcr.io/josegustavo14/personal-cloud-sync:latest}
     build: .
     restart: unless-stopped
     init: true
