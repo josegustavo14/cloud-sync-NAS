@@ -1,5 +1,6 @@
 .git
 .env
+zimaos-test.yaml
 .venv
 **/node_modules
 **/dist
