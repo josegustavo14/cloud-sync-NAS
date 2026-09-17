@@ -68,3 +68,4 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - run: python3 scripts/container_smoke.py personal-cloud-sync:ci
+      - run: python3 scripts/container_smoke.py personal-cloud-sync:ci --bootstrap
