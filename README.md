@@ -17,6 +17,8 @@ Status: **0.1.0, implementação inicial em validação**. Os fluxos locais e a 
 
 ## Instalar no ZimaOS
 
+Para a imagem de teste pronta e importação sem `.env`, veja [instalação de teste no ZimaOS](docs/zimaos-test.md). O YAML pessoal `zimaos-test.yaml` contém o token local e fica fora do Git.
+
 1. Prepare diretórios exclusivos (UID/GID 1000 utilizados pelo container):
 
    ```sh

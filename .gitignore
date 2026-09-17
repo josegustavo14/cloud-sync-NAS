@@ -17,3 +17,4 @@ key.properties
 runtime/
 coverage/
 .DS_Store
+/zimaos-test.yaml
