@@ -48,12 +48,16 @@ def main():
             return json.load(response)
 
     def ready():
+        nonlocal url
+        port = command('docker', 'port', name, '8080/tcp').split(':')[-1]
+        url = f'http://127.0.0.1:{port}'
         for _ in range(90):
             try:
                 if call('/health')['status'] == 'ok':
                     return
             except (OSError, ValueError):
                 time.sleep(1)
+        print(command('docker', 'logs', '--tail', '40', name))
         raise AssertionError('Container did not become healthy')
 
     def sync(aid):

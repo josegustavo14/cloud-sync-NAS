@@ -206,3 +206,40 @@ def test_second_worker_rejected(setup):
     finally:
         first.close()
         second.close()
+
+
+def test_scheduler_enqueues_due_account_and_advances_schedule(setup, monkeypatch):
+    settings, db = setup
+    aid = account(db)
+    db.execute("UPDATE accounts SET interval_minutes=60,next_sync='2000-01-01T00:00:00+00:00' WHERE id=?", (aid,))
+    engine = Engine(db, settings)
+    monkeypatch.setattr(engine.pool, 'submit', lambda *args: None)
+    monkeypatch.setattr(engine.stop_event, 'wait', lambda *args: engine.stop_event.set())
+    engine.schedule_loop()
+    assert len(db.all('SELECT * FROM jobs')) == 1
+    assert db.one('SELECT next_sync FROM accounts')['next_sync'] > now()
+    engine.close()
+
+
+def test_interrupted_job_marked_failed_after_restart(setup):
+    settings, db = setup
+    aid = account(db)
+    db.execute("INSERT INTO jobs(account_id,status,started_at) VALUES(?,'running',?)", (aid, now()))
+    engine = Engine(db, settings)
+    engine.start()
+    engine.close()
+    assert db.one('SELECT status FROM jobs')['status'] == 'failed'
+
+
+def test_corrupt_existing_content_is_not_overwritten(setup, monkeypatch):
+    settings, db = setup
+    content = b'correct'
+    (settings.source_root / 'file.jpg').write_bytes(content)
+    sha = hashlib.sha256(content).hexdigest()
+    corrupt = settings.root / 'data' / sha[:2] / (sha + '.jpg')
+    corrupt.parent.mkdir()
+    corrupt.write_bytes(b'damaged')
+    monkeypatch.setattr('threading.Event.wait', lambda *args: False)
+    assert run(settings, db, account(db))['status'] == 'failed'
+    assert corrupt.read_bytes() == b'damaged'
+    assert not db.all('SELECT * FROM blobs')
