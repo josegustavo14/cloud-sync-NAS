@@ -14,6 +14,7 @@ from .db import Database, now
 from .engine import Engine
 from .providers import ProviderError, build_provider, remotes
 from .oauth import OAuthError, OAuthWizard
+from .update import latest
 
 
 class AccountCreate(BaseModel):
@@ -177,6 +178,10 @@ def create_app(settings=None, background=True):
                 'version': app.version, 'authentication': 'rclone OAuth on server',
                 'oauth_setup': 'docker compose exec cloud-sync rclone config --config /DATA/CloudSync/config/rclone.conf',
                 'oauth_reconnect': 'docker compose exec cloud-sync rclone config reconnect REMOTE: --config /DATA/CloudSync/config/rclone.conf'}
+
+    @app.get('/api/update', dependencies=protected)
+    def update_status():
+        return latest(app.version)
 
     if (settings.web_root / 'assets').exists():
         app.mount('/assets', StaticFiles(directory=settings.web_root / 'assets'), name='assets')

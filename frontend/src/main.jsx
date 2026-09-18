@@ -1018,6 +1018,7 @@ function Logs({ api, job, onClose }) {
 }
 function SettingsView({ api, logout }) {
   const [settings, setSettings] = useState(null);
+  const [update, setUpdate] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -1025,8 +1026,20 @@ function SettingsView({ api, logout }) {
       .then(setSettings)
       .catch((e) => setError(e.message));
   }, [api]);
+  useEffect(() => {
+    api("/update").then(setUpdate).catch(() => setUpdate(null));
+  }, [api]);
   return (
     <div className="settings-grid">
+      {update?.update_available && (
+        <section className="settings-panel update-panel">
+          <RefreshCw size={26} />
+          <h2>Nova versão disponível</h2>
+          <p>Esta instalação está em {update.current}; a versão {update.latest} já foi publicada.</p>
+          <a className="primary" href={update.release_url} target="_blank" rel="noreferrer">Ver atualização</a>
+          <p className="muted">Depois de atualizar a imagem no ZimaOS, os dados em /DATA/CloudSync permanecem intactos.</p>
+        </section>
+      )}
       <section className="settings-panel">
         <HardDrive size={26} />
         <h2>Armazenamento persistente</h2>
