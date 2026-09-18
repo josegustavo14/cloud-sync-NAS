@@ -947,27 +947,33 @@ function AccountModal({ api, onClose, onSave }) {
   );
 }
 function OAuthHelp({ api }) {
-  const [settings, setSettings] = useState(null);
+  const [provider, setProvider] = useState("google_drive");
+  const [name, setName] = useState("");
+  const [session, setSession] = useState(null);
+  const [answer, setAnswer] = useState("");
+  const [done, setDone] = useState("");
   const [error, setError] = useState("");
-  useEffect(() => {
-    api("/settings")
-      .then(setSettings)
-      .catch((e) => setError(e.message));
-  }, [api]);
+  async function start() {
+    setError("");
+    try { setSession(await api("/oauth/start", { method: "POST", body: JSON.stringify({ provider, name }) })); }
+    catch (e) { setError(e.message); }
+  }
+  async function continueWizard() {
+    setError("");
+    try {
+      const next = await api(`/oauth/${session.session}/continue`, { method: "POST", body: JSON.stringify({ result: answer }) });
+      if (next.complete) { setDone(`Conta ${next.remote} autorizada. Feche e reabra o formulário para selecioná-la.`); setSession(null); }
+      else { setSession(next); setAnswer(""); }
+    } catch (e) { setError(e.message); }
+  }
+  const question = session?.question;
   return (
     <details className="oauth-help">
-      <summary>Autorizar ou reautenticar uma conta</summary>
-      <p>
-        No terminal do servidor, execute o assistente oficial do rclone. Em um
-        servidor sem navegador, escolha a autorização em outra máquina.
-      </p>
-      <code>{settings?.oauth_setup || "Carregando instruções…"}</code>
-      <p>Para reautenticar, substitua REMOTE pelo nome da conta:</p>
-      <code>{settings?.oauth_reconnect}</code>
-      <p>
-        Google Drive: use o escopo drive.readonly. Consulte docs/providers.md
-        para OneDrive e Dropbox.
-      </p>
+      <summary>Autorizar ou reautenticar uma conta pelo navegador</summary>
+      <p>O assistente do rclone faz as perguntas aqui. Quando aparecer um link OAuth, abra-o, autorize a conta e cole somente a resposta solicitada.</p>
+      <div className="oauth-form"><select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={!!session}><option value="google_drive">Google Drive</option><option value="onedrive">OneDrive</option><option value="dropbox">Dropbox</option></select><input value={name} onChange={(e) => setName(e.target.value)} disabled={!!session} placeholder="Nome da conta (ex.: drive-pessoal)"/><button type="button" className="secondary" onClick={start} disabled={!!session || !name}>Começar autorização</button></div>
+      {question && <div className="oauth-question"><strong>{question.name}</strong><p>{question.help}</p>{question.examples?.length > 0 && <small>Opções: {question.examples.map((e) => e.Value || e.Help || e).join(" · ")}</small>}<textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={question.default != null ? `Padrão: ${question.default}` : "Cole a resposta do rclone"} rows="4"/><button type="button" className="primary" onClick={continueWizard} disabled={question.required && !answer}>Continuar</button></div>}
+      {done && <p className="oauth-done">{done}</p>}
       {error && <p role="alert">{error}</p>}
     </details>
   );

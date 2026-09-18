@@ -13,6 +13,7 @@ from .config import Settings
 from .db import Database, now
 from .engine import Engine
 from .providers import ProviderError, build_provider, remotes
+from .oauth import OAuthError, OAuthWizard
 
 
 class AccountCreate(BaseModel):
@@ -33,6 +34,7 @@ def create_app(settings=None, background=True):
     db = Database(settings.root / 'database/cloudsync.sqlite3')
     db.migrate()
     engine = Engine(db, settings)
+    oauth = OAuthWizard(settings.root / 'config/rclone.conf')
 
     @asynccontextmanager
     async def lifespan(app):
@@ -154,6 +156,20 @@ def create_app(settings=None, background=True):
             return remotes(settings.root / 'config/rclone.conf')
         except ProviderError:
             raise HTTPException(400, 'Invalid rclone configuration') from None
+
+    @app.post('/api/oauth/start', dependencies=protected)
+    def oauth_start(body: dict):
+        try:
+            return oauth.start(str(body.get('provider', '')), str(body.get('name', '')))
+        except OAuthError as exc:
+            raise HTTPException(400, str(exc)) from None
+
+    @app.post('/api/oauth/{session}/continue', dependencies=protected)
+    def oauth_continue(session: str, body: dict):
+        try:
+            return oauth.continue_(session, body.get('result', ''))
+        except OAuthError as exc:
+            raise HTTPException(400, str(exc)) from None
 
     @app.get('/api/settings', dependencies=protected)
     def app_settings():

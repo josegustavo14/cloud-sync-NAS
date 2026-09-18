@@ -4,6 +4,10 @@ Cada conta usa um remote exclusivo: `drive-pessoal:`, `drive-trabalho:`, `onedri
 
 ## Configuração inicial
 
+A Web UI oferece o assistente **Autorizar ou reautenticar uma conta pelo navegador**. Escolha o provider, dê um nome ao remote e siga as perguntas exibidas. Quando o rclone solicitar a autorização, abra o link mostrado, conclua o OAuth e cole apenas o resultado pedido. O remote é salvo diretamente em `rclone.conf`.
+
+O fluxo de terminal abaixo permanece como recuperação para instalações antigas ou quando o assistente web for interrompido.
+
 ```sh
 docker compose exec cloud-sync rclone config --config /DATA/CloudSync/config/rclone.conf
 ```

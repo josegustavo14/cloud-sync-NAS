@@ -740,6 +740,11 @@ footer span {
 .oauth-help p {
   margin: 13px 0;
 }
+.oauth-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.oauth-form select, .oauth-form input { flex: 1; min-width: 180px; }
+.oauth-question { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.oauth-question textarea { display: block; width: 100%; resize: vertical; margin: 12px 0; border: 1px solid #d5dfeb; border-radius: 6px; padding: 10px; font: inherit; }
+.oauth-done { color: #35876a; }
 dialog {
   border: 1px solid var(--line);
   border-radius: 14px;

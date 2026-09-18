@@ -11,7 +11,7 @@ O arquivo pessoal `zimaos-test.yaml` fica na raiz do checkout e está no `.gitig
 
 O estado fica em `/DATA/CloudSync`. A origem é montada como somente leitura. Na primeira inicialização, o entrypoint prepara apenas os diretórios da aplicação e muda para UID/GID 1000 antes de executar a API. Não muda permissões nem propriedade de arquivos recursivamente.
 
-OAuth usa o rclone do container:
+OAuth pode ser iniciado na seção Contas pelo assistente web. O rclone usa o container e grava o remote no volume persistente. Se precisar recuperar uma autorização interrompida, use:
 
 ```sh
 docker exec -it --user 1000:1000 personal-cloud-sync-test rclone config --config /DATA/CloudSync/config/rclone.conf
