@@ -44,7 +44,7 @@ def create_app(settings=None, background=True):
         yield
         engine.close()
 
-    app = FastAPI(title='Personal Cloud Sync', version='0.1.0', lifespan=lifespan,
+    app = FastAPI(title='Personal Cloud Sync', version='0.2.0', lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.engine = db, engine
 

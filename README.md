@@ -4,7 +4,7 @@ Repositório: [josegustavo14/cloud-sync-NAS](https://github.com/josegustavo14/cl
 
 Cópia unidirecional de múltiplas nuvens, dispositivos e Google Takeout para um servidor ZimaOS. Python/FastAPI, SQLite, rclone, React e Flutter.
 
-Status: **0.1.0, implementação inicial em validação**. Os fluxos locais e a infraestrutura são testáveis; a homologação com contas reais, ZimaOS e uma release publicada ainda é necessária antes de declarar V1.
+Status: **0.2.0, implementação inicial em validação**. Os fluxos locais e a infraestrutura são testáveis; a homologação com contas reais, ZimaOS e uma release publicada ainda é necessária antes de declarar V1.
 
 ## Garantias de armazenamento
 
